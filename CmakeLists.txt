@@ -58,13 +58,13 @@ endif()
 if(${ENABLE_HAL_DRIVER})
     add_subdirectory(${LIB}/${MCU_FAMILY}_HAL_Driver)
   if(${ENABLE_BSP_DRIVER})
-    # add_subdirectory(${LIB}/${MCU_FAMILY}_HAL_BSP)
+    add_subdirectory(${LIB}/${MCU_FAMILY}_HAL_BSP)
   endif()
 endif()
 if(${ENABLE_LL_DRIVER})
     add_subdirectory(${LIB}/${MCU_FAMILY}_LL_Driver)
   if(${ENABLE_BSP_DRIVER})
-    # add_subdirectory(${LIB}/${MCU_FAMILY}_LL_BSP)
+    add_subdirectory(${LIB}/${MCU_FAMILY}_LL_BSP)
   endif()
 endif()
 
@@ -96,14 +96,6 @@ endif()
 if(${ENABLE_STARTUP_FILE})
     target_sources(drivers_${MCU_LOWER} PUBLIC ${LIB}/CMSIS/Device/PY32F0xx/Source/gcc/startup_${STARTUP}.s)
 endif()
-
-#
-#
-
-
-
-#
-#
 
 # ld_script
 if(${ENABLE_STARTUP_FILE})
