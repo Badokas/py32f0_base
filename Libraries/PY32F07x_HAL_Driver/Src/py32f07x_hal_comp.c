@@ -235,7 +235,7 @@ HAL_StatusTypeDef HAL_COMP_Init(COMP_HandleTypeDef *hcomp)
 {
   uint32_t tmp_csr;
   uint32_t exti_line;
-  __IO uint32_t wait_loop_index = 0UL;
+  // __IO uint32_t wait_loop_index = 0UL; // v9eng: unused
   HAL_StatusTypeDef status = HAL_OK;
 
   /* Check the COMP handle allocation and lock status */
