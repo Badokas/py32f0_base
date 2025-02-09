@@ -5048,12 +5048,14 @@ void HAL_I2C_Slave_Custom1_IRQHandler(I2C_HandleTypeDef *hi2c)
 
         error |= HAL_I2C_ERROR_AF;
 
+        #if 0 // v9eng
         /* Do not generate a STOP in case of Slave receive non acknowledge during transfer (mean not at the end of transfer) */
         if (hi2c->Mode == HAL_I2C_MODE_MASTER)
         {
           /* Generate Stop */
           SET_BIT(hi2c->Instance->CR1, I2C_CR1_STOP);
         }
+        #endif
       }
     }
 
@@ -5072,6 +5074,17 @@ void HAL_I2C_Slave_Custom1_IRQHandler(I2C_HandleTypeDef *hi2c)
       I2C_ITError(hi2c);
     }
   }
+  #if 0 // v9eng
+  else if(I2C_CHECK_FLAG(sr1itflags, I2C_SR1_PECERR) != RESET){
+    // for(;;){
+    //   ;
+    // }
+
+    // hi2c->Instance->SR1 = ~(I2C_CR1_PEC);
+    // ((__HANDLE__)->Instance->SR1 = ~((__FLAG__) & I2C_FLAG_MASK))
+    __HAL_I2C_CLEAR_FLAG(hi2c, I2C_CR1_PEC);
+  }
+  #endif
 }
 
 /**
