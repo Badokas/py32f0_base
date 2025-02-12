@@ -53,7 +53,7 @@
 ENTRY(Reset_Handler)
 
 /* Bootloader flag */
-_bflag = ORIGIN(RAM) + LENGTH(RAM) - 4;
+_bflag = ORIGIN(RAM) + LENGTH(RAM) - 4; /* v9eng: blflag */
 /* Highest address of the user mode stack */
 _estack = _bflag; /* end of RAM */
 /* Generate a link error if heap and stack don't fit into RAM */
@@ -140,6 +140,7 @@ SECTIONS
   {
     . = ALIGN(4);
     _sdata = .;        /* create a global symbol at data start */
+    *(.ram_func*)      /* v9eng: custom attribute "ram_func" */
     *(.data)           /* .data sections */
     *(.data*)          /* .data* sections */
 
