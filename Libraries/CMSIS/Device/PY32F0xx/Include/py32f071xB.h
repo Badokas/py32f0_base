@@ -171,6 +171,7 @@ typedef struct
 {
   __IO uint32_t CSR_ODD;       /*!< COMP control and status register located in register of comparator instance odd, used for bits common to several COMP instances,  Address offset: 0x00 */
   __IO uint32_t FR_ODD;
+  uint32_t RESERVED[2];        /*Reserved*/
   __IO uint32_t CSR_EVEN;      /*!< COMP control and status register located in register of comparator instance even, used for bits common to several COMP instances, Address offset: 0x04 */
   __IO uint32_t FR_EVEN;
 } COMP_Common_TypeDef;
@@ -670,6 +671,7 @@ typedef struct
 #define COMP12_COMMON       ((COMP_Common_TypeDef *) COMP1_BASE)
 #define OPA                 ((OPA_TypeDef *) OPA_BASE)
 #define ADC1                ((ADC_TypeDef *) ADC1_BASE)
+#define ADC1_COMMON         ((ADC_Common_TypeDef *)ADC1_BASE)
 #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
 #define SPI1                ((SPI_TypeDef *) SPI1_BASE)
 #define USART1              ((USART_TypeDef *) USART1_BASE)
@@ -804,9 +806,9 @@ typedef struct
 #define ADC_CR2_CAL_Pos                           (2U)
 #define ADC_CR2_CAL_Msk                           (0x1UL << ADC_CR2_CAL_Pos)                        /*!< 0x00000004 */
 #define ADC_CR2_CAL                               ADC_CR2_CAL_Msk                                   /*!< desc CAL */
-#define ADC_CR2_RSTCAL_Pos                        (3U)
-#define ADC_CR2_RSTCAL_Msk                        (0x1UL << ADC_CR2_RSTCAL_Pos)                     /*!< 0x00000008 */
-#define ADC_CR2_RSTCAL                            ADC_CR2_RSTCAL_Msk
+//#define ADC_CR2_RSTCAL_Pos                        (3U)
+//#define ADC_CR2_RSTCAL_Msk                        (0x1UL << ADC_CR2_RSTCAL_Pos)                     /*!< 0x00000008 */
+//#define ADC_CR2_RSTCAL                            ADC_CR2_RSTCAL_Msk
 #define ADC_CR2_DMA_Pos                           (8U)
 #define ADC_CR2_DMA_Msk                           (0x1UL << ADC_CR2_DMA_Pos)                        /*!< 0x00000100 */
 #define ADC_CR2_DMA                               ADC_CR2_DMA_Msk
@@ -840,9 +842,9 @@ typedef struct
 #define ADC_CR2_TSVREFE_Pos                       (23U)
 #define ADC_CR2_TSVREFE_Msk                       (0x1UL << ADC_CR2_TSVREFE_Pos)                    /*!< 0x00800000 */
 #define ADC_CR2_TSVREFE                           ADC_CR2_TSVREFE_Msk
-#define ADC_CR2_VREFBUFFERE_Pos                  (25U)
-#define ADC_CR2_VREFBUFFERE_Msk                  (0x1UL << ADC_CR2_VREFBUFFERE_Pos)               /*!< 0x00800000 */
-#define ADC_CR2_VREFBUFFERE                      ADC_CR2_VREFBUFFERE_Msk
+#define ADC_CR2_VREFBUFFERE_Pos                   (25U)
+#define ADC_CR2_VREFBUFFERE_Msk                   (0x1UL << ADC_CR2_VREFBUFFERE_Pos)                /*!< 0x00800000 */
+#define ADC_CR2_VREFBUFFERE                       ADC_CR2_VREFBUFFERE_Msk
 #define ADC_CR2_VREFBUFFERSEL_Pos                 (26U)
 #define ADC_CR2_VREFBUFFERSEL_Msk                 (0x3UL << ADC_CR2_VREFBUFFERSEL_Pos)              /*!< 0x0C000000 */
 #define ADC_CR2_VREFBUFFERSEL                     ADC_CR2_VREFBUFFERSEL_Msk
@@ -1329,13 +1331,15 @@ typedef struct
 #define COMP_CSR_VCDIV_4           (0x10UL << COMP_CSR_VCDIV_Pos)              /*!< 0x01000000 */
 #define COMP_CSR_VCDIV_5           (0x20UL << COMP_CSR_VCDIV_Pos)              /*!< 0x02000000 */
 
-#define COMP_CSR_VCDIV_EN_Pos      (26U)
-#define COMP_CSR_VCDIV_EN_Msk      (0x1UL << COMP_CSR_VCDIV_EN_Pos)            /*!< 0x04000000 */
-#define COMP_CSR_VCDIV_EN          COMP_CSR_VCDIV_EN_Msk                       /*!< desc VCDIV_EN */
+// #define COMP_CSR_VCDIV_EN_Pos      (26U)
+// #define COMP_CSR_VCDIV_EN_Msk      (0x1UL << COMP_CSR_VCDIV_EN_Pos)            /*!< 0x04000000 */
+// #define COMP_CSR_VCDIV_EN          COMP_CSR_VCDIV_EN_Msk                       /*!< desc VCDIV_EN */
 
-#define COMP_CSR_VCSEL_Pos         (27U)
-#define COMP_CSR_VCSEL_Msk         (0x1UL << COMP_CSR_VCSEL_Pos)               /*!< 0x08000000 */
+#define COMP_CSR_VCSEL_Pos         (26U)
+#define COMP_CSR_VCSEL_Msk         (0x3UL << COMP_CSR_VCSEL_Pos)               /*!< 0x0C000000 */
 #define COMP_CSR_VCSEL             COMP_CSR_VCSEL_Msk                          /*!< desc VCSEL */
+#define COMP_CSR_VCSEL_0           (0x1UL << COMP_CSR_VCSEL_Pos)               /*!< 0x04000000 */
+#define COMP_CSR_VCSEL_1           (0x2UL << COMP_CSR_VCSEL_Pos)               /*!< 0x08000000 */
 
 #define COMP_CSR_COMP_OUT_Pos      (30U)
 #define COMP_CSR_COMP_OUT_Msk      (0x1UL << COMP_CSR_COMP_OUT_Pos)            /*!< 0x40000000 */
@@ -5706,18 +5710,18 @@ typedef struct
 #define LCD_POEN1_S35_Pos               (3U)
 #define LCD_POEN1_S35_Msk               (0x1UL << LCD_POEN1_S35_Pos)              /*!< 0x00000008 */
 #define LCD_POEN1_S35                   LCD_POEN1_S35_Msk
-#define LCD_POEN1_S36_Pos               (4U)
-#define LCD_POEN1_S36_Msk               (0x1UL << LCD_POEN1_S36_Pos)              /*!< 0x00000010 */
-#define LCD_POEN1_S36                   LCD_POEN1_S36_Msk
-#define LCD_POEN1_S37_Pos               (5U)
-#define LCD_POEN1_S37_Msk               (0x1UL << LCD_POEN1_S37_Pos)              /*!< 0x00000020 */
-#define LCD_POEN1_S37                   LCD_POEN1_S37_Msk
-#define LCD_POEN1_S38_Pos               (6U)
-#define LCD_POEN1_S38_Msk               (0x1UL << LCD_POEN1_S38_Pos)              /*!< 0x00000040 */
-#define LCD_POEN1_S38                   LCD_POEN1_S38_Msk
-#define LCD_POEN1_S39_Pos               (7U)
-#define LCD_POEN1_S39_Msk               (0x1UL << LCD_POEN1_S39_Pos)              /*!< 0x00000080 */
+#define LCD_POEN1_S39_Pos               (4U)
+#define LCD_POEN1_S39_Msk               (0x1UL << LCD_POEN1_S39_Pos)              /*!< 0x00000010 */
 #define LCD_POEN1_S39                   LCD_POEN1_S39_Msk
+#define LCD_POEN1_S38_Pos               (5U)
+#define LCD_POEN1_S38_Msk               (0x1UL << LCD_POEN1_S38_Pos)              /*!< 0x00000020 */
+#define LCD_POEN1_S38                   LCD_POEN1_S38_Msk
+#define LCD_POEN1_S37_Pos               (6U)
+#define LCD_POEN1_S37_Msk               (0x1UL << LCD_POEN1_S37_Pos)              /*!< 0x00000040 */
+#define LCD_POEN1_S37                   LCD_POEN1_S37_Msk
+#define LCD_POEN1_S36_Pos               (7U)
+#define LCD_POEN1_S36_Msk               (0x1UL << LCD_POEN1_S36_Pos)              /*!< 0x00000080 */
+#define LCD_POEN1_S36                   LCD_POEN1_S36_Msk
 
 #define LCD_POEN1_C0_Pos                (8U)
 #define LCD_POEN1_C0_Msk                (0x1UL << LCD_POEN1_C0_Pos)               /*!< 0x00000100 */

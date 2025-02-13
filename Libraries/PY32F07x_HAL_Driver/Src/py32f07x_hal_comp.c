@@ -17,8 +17,6 @@
 ================================================================================
 
   [..]
-      The PY32F07X device family integrates three analog comparators instances:
-      COMP1, COMP2, COMP3
       (#) Comparators input minus (inverting input) and input plus (non inverting input)
           can be set to internal references or to GPIO pins
           (refer to GPIO list in reference manual).
@@ -40,9 +38,6 @@
             ##### How to use this driver #####
 ================================================================================
   [..]
-      This driver provides functions to configure and program the comparator instances
-      of PY32F07X devices.
-
       To use the comparator, perform the following steps:
 
       (#)  Initialize the COMP low level resources by implementing the HAL_COMP_MspInit():
@@ -58,14 +53,12 @@
       (++) Select the input minus (inverting input)
       (++) Select the input plus (non-inverting input)
       (++) Select the hysteresis
-      (++) Select the blanking source
       (++) Select the output polarity
       (++) Select the power mode
       (++) Select the window mode
 
       -@@- HAL_COMP_Init() calls internally __HAL_RCC_SYSCFG_CLK_ENABLE()
           to enable internal control clock of the comparators.
-          However, this is a legacy strategy. In future PY32 families,
           COMP clock enable must be implemented by user in "HAL_COMP_MspInit()".
           Therefore, for compatibility anticipation, it is recommended to
           implement __HAL_RCC_SYSCFG_CLK_ENABLE() in "HAL_COMP_MspInit()".
@@ -81,9 +74,6 @@
       (#) Disable the comparator using HAL_COMP_Stop() function.
 
       (#) De-initialize the comparator using HAL_COMP_DeInit() function.
-
-      (#) For safety purpose, comparator configuration can be locked using HAL_COMP_Lock() function.
-          The only way to unlock the comparator is a device hardware reset.
 
     *** Callback registration ***
     =============================================
@@ -146,8 +136,16 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) Puya Semiconductor Co.
+  * <h2><center>&copy; Copyright (c) 2023 Puya Semiconductor Co.
   * All rights reserved.</center></h2>
+  *
+  * This software component is licensed by Puya under BSD 3-Clause license,
+  * the "License"; You may not use this file except in compliance with the
+  * License. You may obtain a copy of the License at:
+  *                        opensource.org/licenses/BSD-3-Clause
+  *
+  ******************************************************************************
+  * @attention
   *
   * <h2><center>&copy; Copyright (c) 2016 STMicroelectronics.
   * All rights reserved.</center></h2>
@@ -204,6 +202,17 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
+/** @defgroup COMP_Private_Functions COMP Private Functions
+  * @{
+  */
+static uint32_t COMP_VrefintCheck(COMP_HandleTypeDef *hcomp);
+static uint32_t COMP_VrefbufCheck(COMP_HandleTypeDef *hcomp);
+static uint32_t COMP_VrefcmpCheck(COMP_HandleTypeDef *hcomp);
+static HAL_StatusTypeDef COMP_VrefConfig(COMP_HandleTypeDef *hcomp);
+/**
+  * @}
+  */
+
 /* Exported functions --------------------------------------------------------*/
 
 /** @defgroup COMP_Exported_Functions COMP Exported Functions
@@ -222,7 +231,6 @@
 @endverbatim
   * @{
   */
-
 /**
   * @brief  Initialize the COMP according to the specified
   *         parameters in the COMP_InitTypeDef and initialize the associated handle.
@@ -235,7 +243,6 @@ HAL_StatusTypeDef HAL_COMP_Init(COMP_HandleTypeDef *hcomp)
 {
   uint32_t tmp_csr;
   uint32_t exti_line;
-  // __IO uint32_t wait_loop_index = 0UL; // v9eng: unused
   HAL_StatusTypeDef status = HAL_OK;
 
   /* Check the COMP handle allocation and lock status */
@@ -314,12 +321,13 @@ HAL_StatusTypeDef HAL_COMP_Init(COMP_HandleTypeDef *hcomp)
       WRITE_REG(hcomp->Instance->FR, (COMP_FR_FLTEN | ((hcomp->Init.DigitalFilter) << COMP_FR_FLTCNT_Pos)));
     }
     
-    if((hcomp->Instance == COMP1 || hcomp->Instance == COMP2) && hcomp->Init.InputMinus == COMP_INPUT_MINUS_IO11)
+    /* Set Vrefint/Vrefbuf/Div */ 
+    if(COMP_VrefintCheck(hcomp) || COMP_VrefbufCheck(hcomp) || COMP_VrefcmpCheck(hcomp) )
     {
-      MODIFY_REG(COMP12_COMMON->CSR_ODD, COMP_CSR_VCSEL, hcomp->Init.VrefSrc);
-      MODIFY_REG(COMP12_COMMON->CSR_ODD, COMP_CSR_VCDIV_EN | COMP_CSR_VCDIV, hcomp->Init.VrefDiv);
+      status = COMP_VrefConfig(hcomp);
     }
     
+    /* Set Hysteresis */ 
     if(hcomp->Init.Hysteresis == COMP_HYSTERESIS_ENABLE)
     {      
       if(hcomp->Instance == COMP1)
@@ -330,10 +338,12 @@ HAL_StatusTypeDef HAL_COMP_Init(COMP_HandleTypeDef *hcomp)
       {
         SET_BIT(hcomp->Instance->CSR,COMP2_CSR_HYST);
       }
+#if defined(COMP3)
       else if (hcomp->Instance == COMP3)
       {
         SET_BIT(hcomp->Instance->CSR,COMP3_CSR_HYST);
       }
+#endif
       else
       {
         
@@ -349,18 +359,21 @@ HAL_StatusTypeDef HAL_COMP_Init(COMP_HandleTypeDef *hcomp)
       {
         CLEAR_BIT(hcomp->Instance->CSR,COMP2_CSR_HYST);
       }
+#if defined(COMP3)
       else if (hcomp->Instance == COMP3)
       {
         CLEAR_BIT(hcomp->Instance->CSR,COMP3_CSR_HYST);
       }
+#endif
       else
       {
         
       }
     }
-
+#if defined(COMP3)
     if(hcomp->Instance != COMP3)
     {
+#endif
       /* Set window mode */
       /* Note: Window mode bit is located into 1 out of the 2 pairs of COMP     */
       /*       instances. Therefore, this function can update another COMP      */
@@ -380,7 +393,9 @@ HAL_StatusTypeDef HAL_COMP_Init(COMP_HandleTypeDef *hcomp)
         CLEAR_BIT(COMP12_COMMON->CSR_ODD, COMP_CSR_WINMODE);
         CLEAR_BIT(COMP12_COMMON->CSR_EVEN, COMP_CSR_WINMODE);
       }
+#if defined(COMP3)
     }
+#endif
     
     /* Get the EXTI line corresponding to the selected COMP instance */
     exti_line = COMP_GET_EXTI_LINE(hcomp->Instance);
@@ -806,8 +821,19 @@ void HAL_COMP_IRQHandler(COMP_HandleTypeDef *hcomp)
 {
   /* Get the EXTI line corresponding to the selected COMP instance */
   uint32_t exti_line = COMP_GET_EXTI_LINE(hcomp->Instance);
-  uint32_t comparator_window_mode_odd = READ_BIT(COMP12_COMMON->CSR_ODD, COMP_CSR_WINMODE);
-  uint32_t comparator_window_mode_even = READ_BIT(COMP12_COMMON->CSR_EVEN, COMP_CSR_WINMODE);
+  uint32_t comparator_window_mode_odd = 0;
+  uint32_t comparator_window_mode_even = 0;
+
+#if defined(COMP3)
+  if(hcomp->Instance != COMP3)
+  {
+    comparator_window_mode_odd = READ_BIT(COMP12_COMMON->CSR_ODD, COMP_CSR_WINMODE);
+    comparator_window_mode_even = READ_BIT(COMP12_COMMON->CSR_EVEN, COMP_CSR_WINMODE);
+  }   
+#else
+  comparator_window_mode_odd = READ_BIT(COMP12_COMMON->CSR_ODD, COMP_CSR_WINMODE);
+  comparator_window_mode_even = READ_BIT(COMP12_COMMON->CSR_EVEN, COMP_CSR_WINMODE);
+#endif
 
   /* Check COMP EXTI flag */
   if(LL_EXTI_IsActiveFlag(exti_line) != 0UL)
@@ -957,6 +983,180 @@ uint32_t HAL_COMP_GetError(COMP_HandleTypeDef *hcomp)
 
   return hcomp->ErrorCode;
 }
+
+/**
+  * @}
+  */
+
+
+/* Private functions ---------------------------------------------------------*/
+
+/** @addtogroup COMP_Private_Functions
+  * @{
+  */
+
+/**
+  * @brief  Check if need to configure the Vrefint
+  * @param  hcomp  COMP handle
+  * @retval 0 or 1
+  */
+static uint32_t COMP_VrefintCheck(COMP_HandleTypeDef *hcomp)
+{
+#if defined(COMP3)
+  return ((((hcomp->Instance == COMP1) || (hcomp->Instance == COMP2)) && (hcomp->Init.InputMinus == COMP_INPUT_MINUS_IO13))\
+      ||((hcomp->Instance == COMP3) && (hcomp->Init.InputMinus == COMP_INPUT_MINUS_IO8)));
+#else
+  return (((hcomp->Instance == COMP1) || (hcomp->Instance == COMP2)) && (hcomp->Init.InputMinus == COMP_INPUT_MINUS_IO13));
+#endif
+}
+
+/**
+  * @brief  Check if need to configure the Vrefbuf
+  * @param  hcomp  COMP handle
+  * @retval 0 or 1
+  */
+static uint32_t COMP_VrefbufCheck(COMP_HandleTypeDef *hcomp)
+{  
+#if defined(COMP3)
+  return ((((hcomp->Instance == COMP1) || (hcomp->Instance == COMP2)) && (hcomp->Init.InputMinus == COMP_INPUT_MINUS_IO14))\
+      ||((hcomp->Instance == COMP3) && (hcomp->Init.InputMinus == COMP_INPUT_MINUS_IO9)));
+#else
+  return (((hcomp->Instance == COMP1) || (hcomp->Instance == COMP2)) && (hcomp->Init.InputMinus == COMP_INPUT_MINUS_IO14));
+#endif
+}
+
+/**
+  * @brief  Check if need to configure the Vrefcmp
+  * @param  hcomp  COMP handle
+  * @retval 0 or 1
+  */
+static uint32_t COMP_VrefcmpCheck(COMP_HandleTypeDef *hcomp)
+{ 
+#if defined(COMP3)
+  return ((((hcomp->Instance == COMP1) || (hcomp->Instance == COMP2)) && (hcomp->Init.InputMinus == COMP_INPUT_MINUS_IO11))\
+       ||((hcomp->Instance == COMP3) && (hcomp->Init.InputMinus == COMP_INPUT_MINUS_IO10)));                                                                           ;
+#else
+  return (((hcomp->Instance == COMP1) || (hcomp->Instance == COMP2)) && (hcomp->Init.InputMinus == COMP_INPUT_MINUS_IO11));
+#endif
+}
+
+/**
+  * @brief  Configure the Vrefint or Vrefbuf or Vrefcmp 
+  * @param  hcomp  COMP handle
+  * @retval None
+  */
+static HAL_StatusTypeDef COMP_VrefConfig(COMP_HandleTypeDef *hcomp)
+{ 
+  HAL_StatusTypeDef status = HAL_OK;
+  if(COMP_VrefintCheck(hcomp))
+  {
+    /* Vrefint 1.2V */
+    FlagStatus adcclkchanged = RESET;
+    
+    if (__HAL_RCC_ADC_IS_CLK_DISABLED() != 0U)
+    {
+      __HAL_RCC_ADC_CLK_ENABLE();
+      adcclkchanged = SET;
+    }
+      
+    SET_BIT(ADC1->CR2, (ADC_CR2_TSVREFE));
+      
+    /* Restore clock configuration if changed */
+    if (adcclkchanged == SET)
+    {
+      __HAL_RCC_ADC_CLK_DISABLE();
+    }
+  }       
+  else if(COMP_VrefbufCheck(hcomp))
+  {
+    /* Vrefbuf */
+    FlagStatus adcclkchanged = RESET;
+      
+    if(__HAL_RCC_ADC_IS_CLK_DISABLED() != 0U)
+    {
+      __HAL_RCC_ADC_CLK_ENABLE();
+      adcclkchanged = SET;
+    }
+    SET_BIT(ADC1->CR2, (ADC_CR2_TSVREFE));
+    if( (hcomp->Init.VrefSrc != COMP_VREF_SRC_VCCA) && (hcomp->Init.VrefSrc != COMP_VREF_SRC_VREF1P2V) )
+    {
+      MODIFY_REG(ADC1->CR2, ADC_CR2_VREFBUFFERE | ADC_CR2_VREFBUFFERSEL, (hcomp->Init.VrefSrc)&0x7fffffff );
+    }
+    else
+    {
+      status = HAL_ERROR;
+    }
+      
+    /* Restore clock configuration if changed */
+    if (adcclkchanged == SET)
+    {
+      __HAL_RCC_ADC_CLK_DISABLE();
+    }
+  }          
+  else if(COMP_VrefcmpCheck(hcomp))
+  {
+    /* Voltage divider */  
+    FlagStatus adcclkchanged = RESET;
+      
+    FlagStatus comp1clkchanged = RESET;
+    
+#if defined(COMP3)
+    if((hcomp->Instance == COMP2) || (hcomp->Instance == COMP3))
+#else
+    if(hcomp->Instance == COMP2)
+#endif     
+    {
+      if (__HAL_RCC_COMP1_IS_CLK_DISABLED() != 0U)
+      {
+        __HAL_RCC_COMP1_CLK_ENABLE();
+        comp1clkchanged = SET;
+      }
+    }
+         
+    if((hcomp->Init.VrefSrc == COMP_VREF_SRC_VCCA) || (hcomp->Init.VrefSrc == COMP_VREF_SRC_VREF1P2V))
+    {
+      MODIFY_REG(COMP1->CSR,COMP_CSR_VCSEL,hcomp->Init.VrefSrc);
+    }
+    else
+    {
+      if (__HAL_RCC_ADC_IS_CLK_DISABLED() != 0U)
+      {
+        __HAL_RCC_ADC_CLK_ENABLE();
+        adcclkchanged = SET;
+      }
+      
+      SET_BIT(ADC1->CR2, (ADC_CR2_TSVREFE));
+      MODIFY_REG(ADC1->CR2, ADC_CR2_VREFBUFFERE | ADC_CR2_VREFBUFFERSEL, (hcomp->Init.VrefSrc)&0x7fffffff  );
+      /* Restore clock configuration if changed */
+      if (adcclkchanged == SET)
+      {
+        __HAL_RCC_ADC_CLK_DISABLE();
+      }
+      
+      MODIFY_REG(COMP1->CSR,COMP_CSR_VCSEL,COMP_CSR_VCSEL_1);   
+    }   
+
+    MODIFY_REG(COMP1->CSR, COMP_CSR_VCDIV, hcomp->Init.VrefDiv);    
+    
+#if defined(COMP3)
+    if((hcomp->Instance == COMP2) || (hcomp->Instance == COMP3))
+#else
+    if(hcomp->Instance == COMP2)
+#endif 
+    {      
+      /* Restore clock configuration if changed */
+      if (comp1clkchanged == SET)
+      {
+        __HAL_RCC_COMP1_CLK_DISABLE();
+      }
+    } 
+  }
+  else
+  {
+  }
+  
+  return status;
+}  
 
 /**
   * @}
