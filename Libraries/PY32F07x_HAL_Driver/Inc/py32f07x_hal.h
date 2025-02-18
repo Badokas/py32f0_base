@@ -60,6 +60,7 @@ typedef enum
   * @}
   */
 /* Exported types ------------------------------------------------------------*/
+extern __IO uint32_t uwTick; // v9eng
 extern uint32_t uwTickPrio;
 extern uint32_t uwTickFreq;
 /** @defgroup SYSCFG_Exported_Constants SYSCFG Exported Constants
