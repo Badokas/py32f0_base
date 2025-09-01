@@ -65,6 +65,8 @@ MEMORY
 {
 RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 16K
 FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 128K
+/* FLASH0 (rx)     : ORIGIN = 0x8000000, LENGTH = 128K - 16 */
+/* FLASH1 (rx)     : ORIGIN = 0x801FFF0, LENGTH = 16 */
 }
 
 /* Define output sections */
@@ -77,6 +79,11 @@ SECTIONS
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
   } >FLASH
+
+  /* .i2c_addr :
+  {
+      KEEP(*(.i2c_addr))
+  } >FLASH */
 
   /* The program code and other data goes into FLASH */
   .text :
